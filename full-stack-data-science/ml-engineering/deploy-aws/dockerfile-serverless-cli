@@ -1,0 +1,7 @@
+FROM node:14
+
+# Install serverless globally
+RUN npm install -g serverless
+
+# Default command to run when container starts
+CMD ["serverless"]

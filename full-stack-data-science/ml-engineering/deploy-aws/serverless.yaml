@@ -1,0 +1,37 @@
+service: yt-search-demo
+
+provider:
+  name: aws
+  region: us-east-1
+
+functions:
+  yt-search-demo:
+    name: yt-search-demo
+    image: 294263178210.dkr.ecr.us-east-1.amazonaws.com/yt-search-demo:latest
+    architecture: arm64
+    timeout: 30
+    events:
+      - http:
+          path: /
+          method: ANY
+      - http:
+          path: /{proxy+}
+          method: ANY
+
+resources:
+  Resources:
+    # Security Group for EFS Mount Target
+    MountTargetSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupName: "yt-demo-efs-mount-target-sg"
+        GroupDescription: "Mount target security group"
+        Tags:
+          - Key: Name
+            Value: "yt-demo-efs-mount-target-sg"
+        VpcId: vpc-0eb65e132a9daf249
+        SecurityGroupIngress:
+          - IpProtocol: tcp
+            FromPort: 2049
+            ToPort: 2049
+            CidrIp: 0.0.0.0/0 # Adjust for tighter security

@@ -1,0 +1,31 @@
+# start from python base image
+# FROM python:3.10
+FROM public.ecr.aws/lambda/python:3.10
+
+# change working directory
+# WORKDIR /code
+WORKDIR /var/task
+
+# install build dependencies
+RUN yum -y groupinstall "Development Tools"
+
+# Install additional system dependencies
+# RUN yum -y update && yum install -y procps
+
+# add requirements file to image
+COPY ./requirements.txt /code/requirements.txt
+
+# install python libraries
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+
+# add python code
+COPY ./app/ .
+# set environment variables to avoid CPU info parsing issues
+# ENV MKL_THREADING_LAYER=GNU
+
+# specify default commands
+# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+
+# Command to run the FastAPI application using Uvicorn
+CMD ["main.handler"]

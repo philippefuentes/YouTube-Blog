@@ -161,3 +161,7 @@ cython_debug/
 
 # apple
 .DS_Store
+
+# serverless
+.serverless
+node_modules
