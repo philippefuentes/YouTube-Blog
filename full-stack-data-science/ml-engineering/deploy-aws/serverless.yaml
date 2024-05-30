@@ -10,6 +10,26 @@ functions:
     image: 294263178210.dkr.ecr.us-east-1.amazonaws.com/yt-search-demo:latest
     architecture: arm64
     timeout: 30
+    vpc:
+      securityGroupIds:
+        - Ref: MountTargetSecurityGroup # Reference to the security group created in the resources section
+      subnetIds:
+        - subnet-0c2beb95982fb9412 # vpc-eussam-private-1
+    fileSystemConfig:
+      localMountPath: /mnt/efs
+      arn:
+        Fn::Join:
+          - ''
+          - - 'arn:aws:elasticfilesystem:'
+            - Ref: AWS::Region
+            - ':'
+            - Ref: AWS::AccountId
+            - ':access-point/'
+            - Ref: EFSAccessPoint
+        # Fn::Sub: arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:access-point/${EFSAccessPoint}
+        # arn: arn:aws:elasticfilesystem:us-east-1:111111111111:access-point/fsap-0d0d0d0d0d0d0d0d0
+        # Fn::Sub: arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${FileSystemId}
+        # arn: arn:aws:elasticfilesystem:us-east-1:YOUR_ACCOUNT_ID:file-system/efs-id # Replace with your EFS ARN
     events:
       - http:
           path: /
@@ -17,6 +37,8 @@ functions:
       - http:
           path: /{proxy+}
           method: ANY
+    dependsOn:
+      - MountTarget
 
 resources:
   Resources:
@@ -35,3 +57,49 @@ resources:
             FromPort: 2049
             ToPort: 2049
             CidrIp: 0.0.0.0/0 # Adjust for tighter security
+
+    # EFS File System
+    EFSFileSystem:
+      Type: AWS::EFS::FileSystem
+      Properties:
+        FileSystemTags:
+          - Key: Name
+            Value: yt-search-demo
+
+    # EFS Access Point for Lambda Access
+    EFSAccessPoint:
+      Type: AWS::EFS::AccessPoint
+      Properties:
+        FileSystemId:
+          Ref: EFSFileSystem
+        PosixUser:
+          Uid: "1000"
+          Gid: "1000"
+        RootDirectory:
+          CreationInfo:
+            OwnerGid: "1000"
+            OwnerUid: "1000"
+            Permissions: "750"
+          Path: "/"
+
+    # EFS Mount Targets
+    MountTarget:
+      Type: AWS::EFS::MountTarget
+      Properties:
+        FileSystemId:
+          Ref: EFSFileSystem
+        SubnetId: subnet-0c2beb95982fb9412 # Lambda subnet
+        SecurityGroups:
+          - Ref: MountTargetSecurityGroup
+
+  # Outputs block must be placed under the resources block to be available in the cloudformation stack
+  Outputs:
+    FileSystemId:
+      Value:
+        Ref: EFSFileSystem
+    AccessPointId:
+      Value:
+        Ref: EFSAccessPoint
+    MountTargetId:
+      Value:
+        Ref: MountTarget

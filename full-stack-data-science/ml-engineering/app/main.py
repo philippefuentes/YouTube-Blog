@@ -5,16 +5,18 @@ from mangum import Mangum
 
 # ref: https://stackoverflow.com/questions/76851281/setting-up-a-sentencetransformer-with-aws-lambda
 from sentence_transformers import SentenceTransformer
+from sklearn.metrics import DistanceMetric
 
-# from sklearn.metrics import DistanceMetric
-# from app.functions import returnSearchResultIndexes
+from app.functions import returnSearchResultIndexes
 
-# # define model info
-# model_name = 'all-MiniLM-L6-v2'
+# define model info
+model_name = 'all-MiniLM-L6-v2'
 # model_path = "app/data/" + model_name
-#
-# # load model
-# model = SentenceTransformer(model_path)
+# deploy
+model_path = "/mnt/efs/" + model_name
+
+# load model
+model = SentenceTransformer(model_path)
 #
 # # load video index
 # df = pl.scan_parquet('app/data/video-index.parquet')
