@@ -26,10 +26,6 @@ functions:
             - Ref: AWS::AccountId
             - ':access-point/'
             - Ref: EFSAccessPoint
-        # Fn::Sub: arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:access-point/${EFSAccessPoint}
-        # arn: arn:aws:elasticfilesystem:us-east-1:111111111111:access-point/fsap-0d0d0d0d0d0d0d0d0
-        # Fn::Sub: arn:aws:elasticfilesystem:${AWS::Region}:${AWS::AccountId}:file-system/${FileSystemId}
-        # arn: arn:aws:elasticfilesystem:us-east-1:YOUR_ACCOUNT_ID:file-system/efs-id # Replace with your EFS ARN
     events:
       - http:
           path: /
@@ -53,6 +49,8 @@ resources:
             Value: "yt-demo-efs-mount-target-sg"
         VpcId: vpc-0eb65e132a9daf249
         SecurityGroupIngress:
+          # - IpProtocol: "-1"
+          #   CidrIp: 0.0.0.0/0 # Adjust for tighter security
           - IpProtocol: tcp
             FromPort: 2049
             ToPort: 2049
@@ -73,14 +71,14 @@ resources:
         FileSystemId:
           Ref: EFSFileSystem
         PosixUser:
-          Uid: "1000"
-          Gid: "1000"
+          Uid: "1001"
+          Gid: "1001"
         RootDirectory:
           CreationInfo:
-            OwnerGid: "1000"
-            OwnerUid: "1000"
-            Permissions: "750"
-          Path: "/"
+            OwnerGid: "1001"
+            OwnerUid: "1001"
+            Permissions: "755"
+          Path: "/efs-hf-storage"
 
     # EFS Mount Targets
     MountTarget:
@@ -93,13 +91,13 @@ resources:
           - Ref: MountTargetSecurityGroup
 
   # Outputs block must be placed under the resources block to be available in the cloudformation stack
-  Outputs:
-    FileSystemId:
-      Value:
-        Ref: EFSFileSystem
-    AccessPointId:
-      Value:
-        Ref: EFSAccessPoint
-    MountTargetId:
-      Value:
-        Ref: MountTarget
+  # Outputs:
+  #   FileSystemId:
+  #     Value:
+  #       Ref: EFSFileSystem
+  #   AccessPointId:
+  #     Value:
+  #       Ref: EFSAccessPoint
+  #   MountTargetId:
+  #     Value:
+  #       Ref: MountTarget

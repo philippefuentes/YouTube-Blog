@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 COPY ./app/ .
 
 # set environment variable for Hugging Face cache directory pointing to AWS EFS volume mounted at /mnt/efs
-ENV TRANSFORMERS_CACHE=/mnt/efs
+ENV HF_HOME=/mnt/efs
 
 # set environment variables to avoid CPU info parsing issues
 # ENV MKL_THREADING_LAYER=GNU
