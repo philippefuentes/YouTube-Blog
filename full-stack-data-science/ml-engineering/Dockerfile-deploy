@@ -13,23 +13,22 @@ RUN yum -y groupinstall "Development Tools"
 # RUN yum -y update && yum install -y procps
 
 # add requirements file to image
-COPY ./requirements.txt /code/requirements.txt
+COPY ./requirements.txt .
 
 # install python libraries
 RUN pip install --no-cache-dir --upgrade pip
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 # add python code
-COPY ./app/ .
+COPY ./app ./app
+# COPY ./app/ /code/app/
 
 # set environment variable for Hugging Face cache directory pointing to AWS EFS volume mounted at /mnt/efs
 ENV HF_HOME=/mnt/efs
 
 # set environment variables to avoid CPU info parsing issues
-# ENV MKL_THREADING_LAYER=GNU
+ENV MKL_THREADING_LAYER=GNU
+ENV OMP_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
 
-# specify default commands
-# CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
-
-# Command to run the FastAPI application using Uvicorn
-CMD ["main.handler"]
+CMD ["app.main.handler"]

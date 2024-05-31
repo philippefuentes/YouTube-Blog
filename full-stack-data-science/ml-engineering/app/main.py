@@ -1,8 +1,9 @@
-# import numpy as np
-# import polars as pl
 import json
 import os
+import subprocess
 
+import numpy as np
+import polars as pl
 from fastapi import FastAPI
 from mangum import Mangum
 
@@ -12,49 +13,15 @@ from sklearn.metrics import DistanceMetric
 
 from app.functions import returnSearchResultIndexes
 
-#
-# define model info
-model_name = 'all-MiniLM-L6-v2'
-# model_path = "app/data/" + model_name
-# deploy
-model_path = "/mnt/efs/" + model_name
-
-# load model
-model = SentenceTransformer(model_path)
-#
-# # load video index
-# df = pl.scan_parquet('app/data/video-index.parquet')
-#
-# # create distance metric object
-# dist_name = 'manhattan'
-# dist = DistanceMetric.get_metric(dist_name)
-
-
-
-def check_permissions(path):
-    print(f"Checking permissions for path: {path}")
-    permissions = {}
-    for root, dirs, files in os.walk(path):
-        for name in dirs + files:
-            full_path = os.path.join(root, name)
-            stat_info = os.stat(full_path)
-            permissions[full_path] = {
-                "mode": oct(stat_info.st_mode),
-                "uid": stat_info.st_uid,
-                "gid": stat_info.st_gid
-            }
-    return permissions
-
-
-
-
 # create FastAPI object
 app = FastAPI()
 
 # API operations
 @app.get("/")
 def health_check():
-    return {'health_check': 'OK'}
+    result = subprocess.run(['ls', '-lsa'], capture_output=True, text=True)
+    # print(result.stdout)
+    return {'health_check': 'OK', 'ls': result.stdout}
 
 @app.get("/info")
 def info():
@@ -62,8 +29,6 @@ def info():
 
 @app.get("/perm")
 def perm_check():
-    # path = "/mnt/efs"
-
     path = "/mnt/efs"
     try:
         st = os.stat(path)
@@ -86,24 +51,6 @@ def perm_check():
     except Exception as e:
         return {"error": str(e)}
 
-    # try:
-    #     st = os.stat(path)
-    #     permissions = {
-    #         "mode": oct(st.st_mode),
-    #         "uid": st.st_uid,
-    #         "gid": st.st_gid
-    #     }
-    #     return {"path": path, "permissions": permissions}
-    # except Exception as e:
-    #     return {"error": str(e)}
-
-
-    # path = "/mnt/efs"
-    # permissions = check_permissions(path)
-    # return {
-    #     "statusCode": 200,
-    #     "body": json.dumps(permissions)
-    # }
 
 @app.get("/write-file")
 def write_file():
@@ -112,9 +59,56 @@ def write_file():
         file.write("hello world")
     return {"message": "File written successfully", "file_path": file_path}
 
-# @app.get("/search")
-# def search(query: str):
-#     idx_result = returnSearchResultIndexes(query, df, model, dist)
-#     return df.select(['title', 'video_id']).collect()[idx_result].to_dict(as_series=False)
+
+@app.get("/download-model")
+def download_model():
+    # Try importing SentenceTransformer with error handling
+
+    #
+    # define model info
+    # model_name = 'all-MiniLM-L6-v2'
+    # model_path = "app/data/" + model_name
+    # deploy
+    # model_path = "/mnt/efs/hub/" + model_name
+
+    # load model
+    # model = SentenceTransformer(model_path)
+
+    SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+    return {"message": "Downloading model"}
+
+@app.get("/search-local")
+def search(query: str):
+    # define model info
+    model_name = 'all-MiniLM-L6-v2'
+    model_path = "app/data/" + model_name
+    # load model
+    model = SentenceTransformer(model_path)
+
+    # load video index
+    df = pl.scan_parquet('app/data/video-index.parquet')
+
+    # create distance metric object
+    dist_name = 'manhattan'
+    dist = DistanceMetric.get_metric(dist_name)
+
+    idx_result = returnSearchResultIndexes(query, df, model, dist)
+    return df.select(['title', 'video_id']).collect()[idx_result].to_dict(as_series=False)
+
+@app.get("/search-hub")
+def search_hub(query: str):
+    # define model info
+    model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+    # load video index
+    df = pl.scan_parquet('app/data/video-index.parquet')
+
+    # create distance metric object
+    dist_name = 'manhattan'
+    dist = DistanceMetric.get_metric(dist_name)
+
+    idx_result = returnSearchResultIndexes(query, df, model, dist)
+    return df.select(['title', 'video_id']).collect()[idx_result].to_dict(as_series=False)
 
 handler = Mangum(app)
