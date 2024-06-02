@@ -89,11 +89,23 @@ def perm_check2(dir: str):
     except Exception as e:
         return {"error": str(e)}
 
-@app.get("/write-file")
-def write_file():
-    file_path = "/mnt/efs/hello.txt"
+@app.get('/user-info')
+def get_user_info():
+    try:
+        uid = os.getuid()
+        gid = os.getgid()
+        return f"UID: {uid}, GID: {gid}"
+    except Exception as e:
+        return "Error fetching user info: {e}"
+
+
+
+@app.get("/write-file/{filenamepath:path}")
+def write_file(filenamepath: str):
+    # file_path = "/mnt/efs/hello.txt"
+    file_path = f"/mnt/efs/{filenamepath}"
     with open(file_path, "w") as file:
-        file.write("hello world")
+        file.write("test write")
     return {"message": "File written successfully", "file_path": file_path}
 
 
@@ -141,6 +153,26 @@ def search_hub(query: str):
         model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
     except Exception as e:
             return {"error": str(e)}
+    # load video index
+    df = pl.scan_parquet('app/data/video-index.parquet')
+
+    # create distance metric object
+    dist_name = 'manhattan'
+    dist = DistanceMetric.get_metric(dist_name)
+
+    idx_result = returnSearchResultIndexes(query, df, model, dist)
+    return df.select(['title', 'video_id']).collect()[idx_result].to_dict(as_series=False)
+
+
+@app.get("/search-efs")
+def search_efs(query: str, model_path: str):
+    try:
+        # load model
+        model = SentenceTransformer(model_path)
+    except Exception as e:
+        return {"eussam error": str(e)}
+
+    # /mnt/efs/hub/models--sentence-transformers--all-MiniLM-L6-v2
     # load video index
     df = pl.scan_parquet('app/data/video-index.parquet')
 
