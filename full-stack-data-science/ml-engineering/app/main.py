@@ -149,7 +149,6 @@ def search(query: str):
 def search_hub(query: str):
 
     try:
-        # define model info
         model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
     except Exception as e:
             return {"error": str(e)}

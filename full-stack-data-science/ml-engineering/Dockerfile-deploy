@@ -23,8 +23,15 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 COPY ./app ./app
 # COPY ./app/ /code/app/
 
+######################
+# Hugging Face setup #
+######################
 # set environment variable for Hugging Face cache directory pointing to AWS EFS volume mounted at /mnt/efs
 ENV HF_HOME=/mnt/efs
+# HF offline mode : no NAT Gateway required (costly) for internet access with lambda
+# https://huggingface.co/docs/transformers/main/en/installation#offline-mode
+ENV HF_HUB_OFFLINE=1
+ENV HF_DATASETS_OFFLINE=1
 
 # set environment variables to avoid CPU info parsing issues
 ENV MKL_THREADING_LAYER=GNU
