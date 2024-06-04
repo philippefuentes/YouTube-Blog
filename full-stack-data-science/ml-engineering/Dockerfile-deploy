@@ -21,7 +21,6 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 # add python code
 COPY ./app ./app
-# COPY ./app/ /code/app/
 
 ######################
 # Hugging Face setup #
